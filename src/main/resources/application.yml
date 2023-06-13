@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/weather?serverTimezone=UTC&charsetEncoding=UTF-8
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 1q2w3e4r!@
+
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+#    database: mysql
+
+  # swagger
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
