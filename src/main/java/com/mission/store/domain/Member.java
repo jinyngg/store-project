@@ -1,6 +1,7 @@
 package com.mission.store.domain;
 
 import com.mission.store.type.MemberStatus;
+import com.mission.store.type.MemberType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,7 +18,6 @@ import java.time.LocalDateTime;
 public class Member extends BaseEntity {
 
     @Id
-    @GeneratedValue
     private String id;
     private String email;
     private String phone;
@@ -26,6 +26,8 @@ public class Member extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private MemberStatus memberStatus;
+    @Enumerated(EnumType.STRING)
+    private MemberType memberType;
 
     private LocalDateTime registeredAt;
     private LocalDateTime unRegisteredAt;
