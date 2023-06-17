@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
+
 @RequestMapping("/store")
 @RestController
 @RequiredArgsConstructor
@@ -17,7 +19,9 @@ public class MemberController {
 
     @PostMapping("/member/register")
     public MemberRegistration.Response register(
-            @RequestBody MemberRegistration.Request request) {
+            @Valid @RequestBody MemberRegistration.Request request) {
         return MemberRegistration.Response.from(memberService.register(request));
     }
+
+
 }
