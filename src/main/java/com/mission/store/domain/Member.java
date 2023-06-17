@@ -30,6 +30,6 @@ public class Member extends BaseEntity {
     private MemberType memberType;
 
     private LocalDateTime registeredAt;
-    private LocalDateTime unRegisteredAt;
+    private LocalDateTime unregisteredAt;
 
 }

@@ -22,7 +22,7 @@ public class MemberDto {
     private MemberType memberType;
 
     private LocalDateTime registeredAt;
-    private LocalDateTime unRegisteredAt;
+    private LocalDateTime unregisteredAt;
 
     public static MemberDto fromEntity(Member member) {
         return MemberDto.builder()
@@ -32,7 +32,7 @@ public class MemberDto {
                 .nickname(member.getNickname())
                 .memberType(member.getMemberType())
                 .registeredAt(member.getRegisteredAt())
-                .unRegisteredAt(member.getUnRegisteredAt())
+                .unregisteredAt(member.getUnregisteredAt())
                 .build();
     }
 }
