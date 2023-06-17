@@ -29,11 +29,24 @@ public class MemberService implements UserDetailsService {
     /** 회원가입 */
     public MemberDto register(MemberRegistration.Request request) {
 
+        /**
+         * 1. 아이디 중복 체크
+         * 2. 이메일 중복 체크
+         * 3. 패스워드 암호화 후 저장
+         * TODO 23.06.17 휴대폰 번호 횟수 제안 고민할 것(1개의 번호로 만들 수 있는 계정의 개수 제안)
+         */
+
         // 아이디 중복 체크
         memberRepository.findById(request.getId()).ifPresent(member -> {
-            throw new RuntimeException("이미 존재하는 아이디입니다.");
+            throw new RuntimeException("이미 사용중인 아이디입니다.");
         });
 
+        // 이메일 중복 체크
+        memberRepository.findByEmail(request.getEmail()).ifPresent(memberRepository -> {
+            throw new RuntimeException("이미 사용중인 이메일입니다.");
+        });
+
+        // 암호화된 비밀번호
         String encPassword = BCrypt.hashpw(request.getPassword(), BCrypt.gensalt());
 
         Member member = memberRepository.save(Member.builder()
