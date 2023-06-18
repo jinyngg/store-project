@@ -8,7 +8,7 @@ spring:
   jpa:
     generate-ddl: true
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create
     show-sql: true
     database: mysql
 
@@ -16,3 +16,6 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
+
+  jwt:
+    secret: c3ByaW5nLWJvb3Qtc3RvcmUtcmVzZXJ2YXRpb24tcHJvamVjdC1qc29uLXdlYi10b2tlbi1zZWNyZXQta2V5
