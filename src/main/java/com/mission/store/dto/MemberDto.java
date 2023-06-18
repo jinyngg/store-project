@@ -1,7 +1,7 @@
 package com.mission.store.dto;
 
 import com.mission.store.domain.Member;
-import com.mission.store.type.MemberType;
+import com.mission.store.type.MemberRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,7 +19,7 @@ public class MemberDto {
     private String nickname;
     private String password;
 
-    private MemberType memberType;
+    private MemberRole memberRole;
 
     private LocalDateTime registeredAt;
     private LocalDateTime unregisteredAt;
@@ -30,7 +30,7 @@ public class MemberDto {
                 .email(member.getEmail())
                 .phone(member.getPhone())
                 .nickname(member.getNickname())
-                .memberType(member.getMemberType())
+                .memberRole(member.getMemberRole())
                 .registeredAt(member.getRegisteredAt())
                 .unregisteredAt(member.getUnregisteredAt())
                 .build();
