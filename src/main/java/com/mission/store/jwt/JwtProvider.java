@@ -1,5 +1,6 @@
 package com.mission.store.jwt;
 
+import com.mission.store.service.MemberDetailsService;
 import com.mission.store.type.MemberRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -7,9 +8,14 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 
 
@@ -19,19 +25,24 @@ import java.util.Date;
 
 @Component
 @RequiredArgsConstructor
-public class JwtTokenProvider {
+public class JwtProvider {
 
-    private static final String KEY_ROLE = "memberRole";
+    private static final String TOKEN_HEADER = "Authorization";
+    private static final String TOKEN_PREFIX = "Bearer ";
     private static final long TOKEN_EXPIRE_TIME = 1000L * 60 * 60; // 1시간
+    
+    private static final String KEY_ROLE = "memberRole";
+
+    private final MemberDetailsService memberDetailsService;
 
 
     @Value("${spring.jwt.secret}")
     private String secretKey;
 
-    public String GenerateAccessToken(String id, MemberRole memberRole) {
-
-        // JWT 를 이용해 전송되는 암호화된 정보 생성
-        Claims claims = Jwts.claims().setSubject(id);
+    /** 토큰 생성 */
+    public String GenerateAccessToken(String email, MemberRole memberRole) {
+        // JWT 를 이용해 전송되는 암호화된 정보 생성 -> 이메일을 통한 회원가입, setSubject(email)
+        Claims claims = Jwts.claims().setSubject(email);
         claims.put(KEY_ROLE, memberRole);
 
         Date now = new Date();
@@ -45,25 +56,34 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    /** 사용자 ID 가져오기 */
-    public String getId(String accessToken) {
+    /** Spring Security 인증 과정에서 권한 확인 */
+    public Authentication getAuthentication(String accessToken) {
+        UserDetails userDetails = memberDetailsService.loadUserByUsername(this.getEmail(accessToken));
+        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+    }
+
+    /** 사용자 이메일 가져오기 */
+    public String getEmail(String accessToken) {
         return parseClaims(accessToken).getSubject();
     }
 
-    /** 토큰 벨리데이션 */
-    public boolean validateAccessToken(String accessToken) {
+    /** 토큰 추출 */
+    public String resolveTokenFromRequest(HttpServletRequest request) {
+        String token = request.getHeader(TOKEN_HEADER);
 
+        if (!ObjectUtils.isEmpty(token) && token.startsWith(TOKEN_PREFIX)) {
+            return token.substring(TOKEN_PREFIX.length());
+        }
+
+        return null;
+    }
+
+    /** 토큰 유효성 검사 */
+    public boolean validateAccessToken(String accessToken) {
         // accessToken 값이 빈 값일 경우 유효하지 않다.
         if (!StringUtils.hasText(accessToken)) {
             return false;
         }
-
-//        // Bearer 검증
-//        if(!accessToken.substring(0, "BEARER ".length()).equalsIgnoreCase("BEARER ")) {
-//            return false;
-//        } else {
-//            accessToken = accessToken.split(" ")[1].trim();
-//        }
 
         Claims claims = parseClaims(accessToken);
         // 토큰 만료시간이 현재 시간보다 이전인지 아닌지 확인
@@ -72,7 +92,6 @@ public class JwtTokenProvider {
 
     /** Claims(암호화된 정보) 파싱 */
     public Claims parseClaims(String accessToken) {
-
         try {
             return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(accessToken).getBody();
         } catch (ExpiredJwtException e) {

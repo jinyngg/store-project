@@ -19,11 +19,7 @@ public class MemberDetails implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
 
-        /*
-         * 권한 -> (손님, 점주)
-         * 손님은 점주의 기능 사용 불가능하나 점주는 손님의 기능 사용 가능, 권한을 리스트 형식이 아닌 하나로 관리
-         * TODO 권한이 추가된다면 리스트로 변경되어야 할 수 있음
-         */
+        /* 권한 -> 손님, 점주, TODO 어드민 */
         GrantedAuthority grantedAuthority = new SimpleGrantedAuthority(member.getMemberRole().getAuthority());
         return Collections.singleton(grantedAuthority);
     }
@@ -34,10 +30,10 @@ public class MemberDetails implements UserDetails {
         return member.getPassword();
     }
 
-    // 사용자 고유 식별자 id 반환
+    // 사용자 고유 식별자인 이메일 반환
     @Override
     public String getUsername() {
-        return member.getId();
+        return member.getEmail();
     }
 
     // 사용자 계정 만료여부 반환

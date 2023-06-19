@@ -1,6 +1,7 @@
 package com.mission.store.dto;
 
 import com.mission.store.type.MemberRole;
+import com.mission.store.type.MemberStatus;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -16,11 +17,6 @@ public class MemberRegistration {
     @Builder
     public static class Request {
 
-        @NotBlank(message = "아이디가 누락되었습니다.")
-        @Pattern(regexp = "^[a-zA-Z][a-zA-Z0-9]*$"
-                , message = "아이디는 영어와 숫자로만 구성되어야 하며, 첫 시작은 영문자로 작성해야 합니다.")
-        @Size(min = 6, max = 12, message = "아이디는 6자 이상 12자 이하로 작성해야 합니다.")
-        private String id;
         @NotBlank(message = "이메일이 누락되었습니다.")
         @Email(message = "이메일 주소 형식이 잘못되었습니다.")
         private String email;
@@ -41,14 +37,24 @@ public class MemberRegistration {
     @Builder
     public static class Response {
 
-        private String id;
+        private Long id;
+        private String email;
+        private String phone;
         private String nickname;
+
+        private MemberStatus memberStatus;
+        private MemberRole memberRole;
+
         private LocalDateTime registeredAt;
 
         public static Response from(MemberDto memberDto) {
             return Response.builder()
                     .id(memberDto.getId())
+                    .email(memberDto.getEmail())
+                    .phone(memberDto.getPhone())
                     .nickname(memberDto.getNickname())
+                    .memberStatus(memberDto.getMemberStatus())
+                    .memberRole(memberDto.getMemberRole())
                     .registeredAt(memberDto.getRegisteredAt())
                     .build();
         }
