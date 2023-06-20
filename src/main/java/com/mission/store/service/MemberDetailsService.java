@@ -17,11 +17,9 @@ public class MemberDetailsService implements UserDetailsService {
     private final MemberRepository memberRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Member member = memberRepository.findByEmail(email)
+    public UserDetails loadUserByUsername(String phone) throws UsernameNotFoundException {
+        Member member = memberRepository.findByPhone(phone)
                 .orElseThrow(() -> new UsernameNotFoundException("회원 정보가 존재하지 않습니다."));
-
-        System.out.println("@@@@@@ member -> " + member);
 
         // 정지된 계정일 경우 예외 처리
         if (member.getMemberStatus() == MemberStatus.BLOCKED) {

@@ -14,9 +14,9 @@ import java.time.LocalDateTime;
 @Entity
 public class Member extends BaseEntity {
 
-    @Column(unique = true)
-    private String email;
     @Column(nullable = false)
+    private String email;
+    @Column(nullable = false, unique = true)
     private String phone;
     @Column(nullable = false)
     private String nickname;
@@ -30,7 +30,6 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private MemberRole memberRole;
 
-    private LocalDateTime registeredAt;
-    private LocalDateTime unregisteredAt;
-
+    private LocalDateTime registeredAt; // TODO 가입 인증 후 회원 활성화 등록 시간
+    private LocalDateTime unregisteredAt; // TODO 탈퇴 or 정지 시간
 }

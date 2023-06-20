@@ -40,9 +40,9 @@ public class JwtProvider {
     private String secretKey;
 
     /** 토큰 생성 */
-    public String GenerateAccessToken(String email, MemberRole memberRole) {
-        // JWT 를 이용해 전송되는 암호화된 정보 생성 -> 이메일을 통한 회원가입, setSubject(email)
-        Claims claims = Jwts.claims().setSubject(email);
+    public String GenerateAccessToken(String phone, MemberRole memberRole) {
+        // JWT 를 이용해 전송되는 암호화된 정보 생성 -> 이메일을 통한 회원가입, setSubject(phone)
+        Claims claims = Jwts.claims().setSubject(phone);
         claims.put(KEY_ROLE, memberRole);
 
         Date now = new Date();
@@ -58,12 +58,12 @@ public class JwtProvider {
 
     /** Spring Security 인증 과정에서 권한 확인 */
     public Authentication getAuthentication(String accessToken) {
-        UserDetails userDetails = memberDetailsService.loadUserByUsername(this.getEmail(accessToken));
+        UserDetails userDetails = memberDetailsService.loadUserByUsername(this.getPhone(accessToken));
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
-    /** 사용자 이메일 가져오기 */
-    public String getEmail(String accessToken) {
+    /** SUBJECT(사용자 전화번호) 가져오기 */
+    public String getPhone(String accessToken) {
         return parseClaims(accessToken).getSubject();
     }
 
