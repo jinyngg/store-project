@@ -7,7 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum MemberRole {
 
-    OWNER("ROLE_OWNER", "매장 점주")
+    OWNER("ROLE_OWNER", "매장 점주") //  파트너 회원 가입
     , CUSTOMER("ROLE_CUSTOMER", "매장 손님")
 
     ;

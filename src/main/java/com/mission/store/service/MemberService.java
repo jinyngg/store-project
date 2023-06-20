@@ -57,6 +57,7 @@ public class MemberService {
         return MemberDto.fromEntity(member);
     }
 
+    /** 로그인 */
     @Transactional
     public MemberDto login(MemberLogin.Request request) {
         Member member = memberRepository.findByEmail(request.getEmail()).orElseThrow(() ->
