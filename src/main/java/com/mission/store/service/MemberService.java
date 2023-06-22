@@ -27,7 +27,8 @@ public class MemberService {
         /*
          * 1. 이메일 중복 체크
          * 2. 전화번호 중복 체크
-         * 3. 패스워드 암호화 후 저장
+         * 3. 닉네임 중복 체크
+         * 4. 패스워드 암호화 후 저장
          */
         // 이메일 중복 체크
         memberRepository.findByEmail(request.getEmail()).ifPresent(member -> {
@@ -37,6 +38,11 @@ public class MemberService {
         // 전화번호 중복 체크
         memberRepository.findByPhone(request.getPhone()).ifPresent(member -> {
             throw new RuntimeException("이미 사용중인 전화번호입니다.");
+        });
+
+        // 닉네임 중복 체크
+        memberRepository.findByNickname(request.getNickname()).ifPresent(member -> {
+            throw new RuntimeException("이미 사용중인 닉네임입니다.");
         });
 
         // 암호화된 비밀번호
