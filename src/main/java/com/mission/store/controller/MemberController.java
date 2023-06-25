@@ -1,8 +1,8 @@
 package com.mission.store.controller;
 
-import com.mission.store.dto.MemberDto;
 import com.mission.store.dto.MemberLogin;
 import com.mission.store.dto.MemberRegistration;
+import com.mission.store.dto.TokenRequestDto;
 import com.mission.store.jwt.JwtProvider;
 import com.mission.store.service.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 
-@RequestMapping("/store")
+@RequestMapping("/store/api/v1")
 @RestController
 @RequiredArgsConstructor
 public class MemberController {
@@ -25,21 +25,26 @@ public class MemberController {
 
     /** 회원가입 */
     @PostMapping("/member/register")
-    public ResponseEntity<MemberRegistration.Response> register(
-            @Valid @RequestBody MemberRegistration.Request request) {
-        MemberDto memberDto = memberService.register(request);
+    public ResponseEntity<?> register(
+            @Valid @RequestBody MemberRegistration request) {
+        memberService.register(request);
 
-        return new ResponseEntity<>(MemberRegistration.Response.from(memberDto), HttpStatus.CREATED);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     /** 로그인 */
     @PostMapping("/member/login")
-    public ResponseEntity<MemberLogin.Response> login(
-            @RequestBody MemberLogin.Request request) {
-        MemberDto memberDto = memberService.login(request);
-        String accessToken = jwtProvider.GenerateAccessToken(memberDto.getEmail(), memberDto.getMemberRole());
+    public ResponseEntity<?> login(
+            @RequestBody MemberLogin request) {
+        return new ResponseEntity<>(memberService.login(request), HttpStatus.OK);
+    }
 
-        return new ResponseEntity<>(MemberLogin.Response.from(memberDto, accessToken), HttpStatus.OK);
+    /** 토큰 재발급 */
+    @PostMapping("/member/refresh")
+    public ResponseEntity<?> refresh(
+            @RequestBody TokenRequestDto tokenRequestDto
+    ) {
+        return new ResponseEntity<>(memberService.refresh(tokenRequestDto), HttpStatus.OK);
     }
 
 

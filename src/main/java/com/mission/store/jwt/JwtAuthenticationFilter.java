@@ -23,7 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String accessToken = jwtProvider.resolveTokenFromRequest(request);
 
-        if (StringUtils.hasText(accessToken) && jwtProvider.validateAccessToken(accessToken)) {
+        if (StringUtils.hasText(accessToken) && jwtProvider.validateToken(accessToken)) {
             // 토큰 유효성 검증 -> accessToken 확인
             Authentication authentication = jwtProvider.getAuthentication(accessToken);
             SecurityContextHolder.getContext().setAuthentication(authentication);

@@ -1,12 +1,17 @@
 package com.mission.store.service;
 
 import com.mission.store.domain.Member;
-import com.mission.store.dto.MemberDto;
+import com.mission.store.domain.RefreshToken;
 import com.mission.store.dto.MemberLogin;
 import com.mission.store.dto.MemberRegistration;
+import com.mission.store.dto.TokenDto;
+import com.mission.store.dto.TokenRequestDto;
+import com.mission.store.jwt.JwtProvider;
 import com.mission.store.repository.MemberRepository;
+import com.mission.store.repository.RefreshTokenRepository;
 import com.mission.store.type.MemberStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,12 +22,14 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class MemberService {
 
-    private final PasswordEncoder passwordEncoder;
     private final MemberRepository memberRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final JwtProvider jwtProvider;
+    private final PasswordEncoder passwordEncoder;
 
     /** 회원가입 */
     @Transactional
-    public MemberDto register(MemberRegistration.Request request) {
+    public void register(MemberRegistration request) {
 
         /*
          * 1. 이메일 중복 체크
@@ -49,7 +56,7 @@ public class MemberService {
 //        String encPassword = BCrypt.hashpw(request.getPassword(), BCrypt.gensalt());
         String encPassword = passwordEncoder.encode(request.getPassword());
 
-        Member member = memberRepository.save(Member.builder()
+        memberRepository.save(Member.builder()
                 .email(request.getEmail())
                 .phone(request.getPhone())
                 .nickname(request.getNickname())
@@ -60,12 +67,11 @@ public class MemberService {
                 .registeredAt(LocalDateTime.now())
                 .build());
 
-        return MemberDto.fromEntity(member);
     }
 
     /** 로그인 */
     @Transactional
-    public MemberDto login(MemberLogin.Request request) {
+    public TokenDto login(MemberLogin request) {
         Member member = memberRepository.findByEmail(request.getEmail()).orElseThrow(() ->
                 new RuntimeException("존재하지 않는 email 입니다."));
 
@@ -73,7 +79,57 @@ public class MemberService {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
 
-        return MemberDto.fromEntity(member);
+//        // Token(Access + Refresh) 발급
+        TokenDto tokenDto = jwtProvider.GenerateToken(member.getPhone(), member.getMemberRole());
+        String refreshToken = tokenDto.getRefreshToken();
+        Long memberId = member.getId();
+
+        RefreshToken currentToken = refreshTokenRepository.findByKey(memberId).orElse(null);
+        if (currentToken != null) {
+            currentToken.updateToken(refreshToken);
+            refreshTokenRepository.save(currentToken);
+        } else {
+            refreshTokenRepository.save(
+                    RefreshToken.builder()
+                            .key(memberId)
+                            .token(refreshToken)
+                            .build());
+        }
+
+        return tokenDto;
+    }
+
+    /** 토큰 재발급(자동 로그인) */
+    @Transactional
+    public TokenDto refresh(TokenRequestDto request) {
+        if (!jwtProvider.validateToken(request.getRefreshToken())) {
+            throw new RuntimeException("리프레시 토큰이 만료되었습니다.");
+        }
+
+        // authentication 정보 가져오기
+        String accessToken = request.getAccessToken();
+        Authentication authentication = jwtProvider.getAuthentication(accessToken);
+
+        // authentication.getName() -> 해당 JWT 포함된 사용자 이름 반환
+        Member member = memberRepository.findByPhone(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("해당 전화번호로 가입된 계정이 없습니다.")
+                );
+
+        // 저장된 리프레시 토큰이 없을 경우 에러 발생
+        RefreshToken refreshToken = refreshTokenRepository.findByKey(member.getId())
+                .orElseThrow(() -> new RuntimeException("계정에 저장된 리프레시 토큰이 없습니다."));
+
+        // 리프레시 토큰 불일치 에러
+        if (!refreshToken.getToken().equals(request.getRefreshToken()))
+            throw new RuntimeException("리프레시 토큰이 일치하지 않습니다.");
+
+        // AccessToken, RefreshToken 토큰 재발급, 리프레쉬 토큰 저장
+        TokenDto newGenerateToken = jwtProvider.GenerateToken(member.getPhone(), member.getMemberRole());
+        RefreshToken updateRefreshToken = refreshToken.updateToken(newGenerateToken.getRefreshToken());
+        refreshTokenRepository.save(updateRefreshToken);
+
+        return newGenerateToken;
+
     }
 
 }
