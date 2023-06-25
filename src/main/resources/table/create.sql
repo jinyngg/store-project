@@ -63,3 +63,11 @@ CREATE TABLE review (
                         CONSTRAINT fk_review_member FOREIGN KEY (member_id) REFERENCES member (id),
                         CONSTRAINT fk_review_reservation FOREIGN KEY (reservation_id) REFERENCES reservation (id)
 );
+
+CREATE TABLE refresh_token (
+                               id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                               created_at DATETIME NOT NULL,
+                               updated_at DATETIME,
+                               member_id BIGINT NOT NULL,
+                               token VARCHAR(255) NOT NULL
+);
