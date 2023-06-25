@@ -8,7 +8,7 @@ import lombok.Getter;
 public enum StoreStatus {
 
     OPEN("영업")
-    , CLOSED("휴업")
+//    , CLOSED("휴업")
     , OUT_OF_BUSINESS("폐업")
 
     ;
