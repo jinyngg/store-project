@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class StoreService {
 
+    private final static int OPEN_STORE_COUNT = 3;
+
     private final MemberRepository memberRepository;
     private final StoreRepository storeRepository;
 
@@ -37,7 +39,7 @@ public class StoreService {
         }
         
         // 3. "영업" 상태인 매장의 개수가 3개 이상일 경우 등록 불가능
-        if (storeRepository.countByOwnerAndStoreStatus(owner, StoreStatus.OPEN) >= 3) {
+        if (storeRepository.countByOwnerAndStoreStatus(owner, StoreStatus.OPEN) >= OPEN_STORE_COUNT) {
             throw new RuntimeException("등록할 수 있는 매장 수를 초과했습니다. (최대 3개)");
         }
 
