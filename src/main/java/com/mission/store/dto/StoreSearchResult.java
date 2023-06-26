@@ -7,9 +7,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class StoreDto {
-
-    private Owner owner; // 점주
+public class StoreSearchResult {
 
     private String name; // 상점 이름
     private String address; // 상점 주소
@@ -26,9 +24,8 @@ public class StoreDto {
     private String businessHours; // 영업 시간(09:00 - 18:00)
     private String breakTime; // 휴무 시간(15:00 - 16:00)
 
-    public static StoreDto fromEntity(Store store) {
-        return StoreDto.builder()
-                .owner(Owner.fromEntity(store.getOwner()))
+    public static StoreSearchResult fromEntity(Store store) {
+        return StoreSearchResult.builder()
                 .name(store.getName())
                 .address(store.getAddress())
                 .description(store.getDescription())
