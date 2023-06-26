@@ -3,14 +3,12 @@ package com.mission.store.dto;
 import com.mission.store.domain.Member;
 import com.mission.store.type.MemberRole;
 import com.mission.store.type.MemberStatus;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 
 @Getter
-@AllArgsConstructor
 @Builder
 public class MemberDto {
 

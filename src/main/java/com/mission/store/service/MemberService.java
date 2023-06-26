@@ -30,30 +30,22 @@ public class MemberService {
     /** 회원가입 */
     @Transactional
     public void register(MemberRegistration request) {
-
-        /*
-         * 1. 이메일 중복 체크
-         * 2. 전화번호 중복 체크
-         * 3. 닉네임 중복 체크
-         * 4. 패스워드 암호화 후 저장
-         */
-        // 이메일 중복 체크
+        // 1. 이메일 중복 체크
         memberRepository.findByEmail(request.getEmail()).ifPresent(member -> {
             throw new RuntimeException("이미 사용중인 이메일입니다.");
         });
 
-        // 전화번호 중복 체크
+        // 2. 전화번호 중복 체크
         memberRepository.findByPhone(request.getPhone()).ifPresent(member -> {
             throw new RuntimeException("이미 사용중인 전화번호입니다.");
         });
 
-        // 닉네임 중복 체크
+        // 3. 닉네임 중복 체크
         memberRepository.findByNickname(request.getNickname()).ifPresent(member -> {
             throw new RuntimeException("이미 사용중인 닉네임입니다.");
         });
 
-        // 암호화된 비밀번호
-//        String encPassword = BCrypt.hashpw(request.getPassword(), BCrypt.gensalt());
+        // 4. 패스워드 암호화 후 저장
         String encPassword = passwordEncoder.encode(request.getPassword());
 
         memberRepository.save(Member.builder()
@@ -71,9 +63,9 @@ public class MemberService {
 
     /** 로그인 */
     @Transactional
-    public TokenDto login(MemberLogin request) {
-        Member member = memberRepository.findByEmail(request.getEmail()).orElseThrow(() ->
-                new RuntimeException("존재하지 않는 email 입니다."));
+    public MemberLogin.Response login(MemberLogin.Request request) {
+        Member member = memberRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 email 입니다."));
 
         if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
@@ -96,7 +88,10 @@ public class MemberService {
                             .build());
         }
 
-        return tokenDto;
+        return MemberLogin.Response.builder()
+                .id(memberId)
+                .token(tokenDto)
+                .build();
     }
 
     /** 토큰 재발급(자동 로그인) */
@@ -110,7 +105,7 @@ public class MemberService {
         String accessToken = request.getAccessToken();
         Authentication authentication = jwtProvider.getAuthentication(accessToken);
 
-        // authentication.getName() -> 해당 JWT 포함된 사용자 이름 반환
+        // authentication.getName() -> 해당 JWT 포함된 Subject 이름 반환
         Member member = memberRepository.findByPhone(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("해당 전화번호로 가입된 계정이 없습니다.")
                 );
