@@ -9,6 +9,7 @@ import lombok.Getter;
 @Builder
 public class StoreSearchResult {
 
+    private Long id;
     private String name; // 상점 이름
     private String address; // 상점 주소
     private String description; // 상점 설명
@@ -26,6 +27,7 @@ public class StoreSearchResult {
 
     public static StoreSearchResult fromEntity(Store store) {
         return StoreSearchResult.builder()
+                .id(store.getId())
                 .name(store.getName())
                 .address(store.getAddress())
                 .description(store.getDescription())

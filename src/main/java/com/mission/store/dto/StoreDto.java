@@ -11,6 +11,7 @@ public class StoreDto {
 
     private Owner owner; // 점주
 
+    private Long id;
     private String name; // 상점 이름
     private String address; // 상점 주소
     private String description; // 상점 설명
@@ -28,6 +29,7 @@ public class StoreDto {
 
     public static StoreDto fromEntity(Store store) {
         return StoreDto.builder()
+                .id(store.getId())
                 .owner(Owner.fromEntity(store.getOwner()))
                 .name(store.getName())
                 .address(store.getAddress())
