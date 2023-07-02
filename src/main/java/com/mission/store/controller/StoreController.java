@@ -37,7 +37,7 @@ public class StoreController {
     public ResponseEntity<?> getStores() {
         List<StoreDto> stores = storeService.getStores();
 
-        Map<String, List<StoreDto>> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put("stores", stores);
         return ResponseEntity.ok().body(response);
     }
@@ -54,7 +54,7 @@ public class StoreController {
             @RequestParam("name") String name) {
         List<StoreSearchResult> storeSearchResults = storeService.searchStoresByName(name);
 
-        Map<String, List<StoreSearchResult>> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put("storeSearchResults", storeSearchResults);
 
         return ResponseEntity.ok().body(response);
@@ -65,7 +65,7 @@ public class StoreController {
     public ResponseEntity<?> getStoresByOwnerId(@PathVariable Long id) {
         List<StoreDto> stores = storeService.getStoresByOwnerId(id);
 
-        Map<String, List<StoreDto>> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put("stores", stores);
         return ResponseEntity.ok().body(response);
     }
