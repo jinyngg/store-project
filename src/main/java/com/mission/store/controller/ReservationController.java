@@ -1,14 +1,11 @@
 package com.mission.store.controller;
 
-import com.mission.store.dto.ReservationRequest;
+import com.mission.store.dto.ReservationRegistration;
 import com.mission.store.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
@@ -19,12 +16,26 @@ public class ReservationController {
 
     private final ReservationService reservationService;
 
-    /** 예약 생성 */
-    @PostMapping("/reservation")
+    /** 예약 요청 */
+    @PostMapping("/reservations")
     public ResponseEntity<?> reserve(
-            @Valid @RequestBody ReservationRequest request) {
-        reservationService.reserve(request);
+            @Valid @RequestBody ReservationRegistration.Request request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(reservationService.reserve(request));
+    }
 
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    /** 예약 취소 */
+    @PutMapping("/reservations/{reservationId}/cancel")
+    public ResponseEntity<?> cancelReservation(@PathVariable Long reservationId) {
+        reservationService.cancelReservation(reservationId);
+        return ResponseEntity.ok().build();
+    }
+    
+    /** 키오스크 예약 방문 확인 */
+    @PutMapping("/reservations/{reservationId}/kiosk/confirm")
+    public ResponseEntity<?> confirmVisit(
+            @PathVariable Long reservationId
+            , @RequestParam("reservationCode") String reservationCode) {
+        reservationService.confirmVisit(reservationId, reservationCode);
+        return ResponseEntity.ok().build();
     }
 }

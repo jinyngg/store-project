@@ -37,20 +37,46 @@ public class SecurityConfiguration {
         // 세션을 생성하지 않고, 요청마다 독립적인 인증을 수행 -> 서버가 클라이언트의 상태를 유지하지 않고, JWT 토큰을 통해 클라이언트의 인증을 검증
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
-        // 요청 허용/제한 설정
-        http.authorizeRequests()
-                .antMatchers(
-                        "/"
-                        , "/store/member/register"
-                )
-                .permitAll();
-
         // TODO 특정 권한 허용/제한 설정
-//        http.authorizeRequests()
-//                .antMatchers("")
-//                .hasAnyRole()
-//                .anyRequest()
-//                .denyAll();
+        http.authorizeRequests()
+                // 권한 없음
+                .antMatchers("/"
+                        , "/store/api/v1/member/register"
+                        , "/store/api/v1/member/login"
+                )
+                .permitAll()
+
+                // 손님 권한
+//                .antMatchers(
+//
+//                )
+//                .hasAnyRole("CUSTOMER")
+
+                // 점주 권한
+                .antMatchers(
+                        "/store/api/v1/store/register/**"
+                )
+                .hasRole("OWNER")
+
+                // 손님, 점주 권한
+                .antMatchers(
+                        "/store/api/v1/reservations"
+                        , "/store/api/v1/reservations/{reservationId}/cancel"
+                        , "/store/api/v1/reservations/{reservationId}/kiosk/confirm"
+                )
+                .hasAnyRole("CUSTOMER", "OWNER")
+
+                // 권한 없이 사용
+                .antMatchers(
+                        "/store/api/v1/store/search"
+                        , "/store/api/v1//store/{id}"
+                )
+                .permitAll()
+
+                .anyRequest()
+                .authenticated()
+        ;
+
 
         // JWT 인증 필터 적용
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

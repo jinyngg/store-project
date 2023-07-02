@@ -3,14 +3,25 @@ package com.mission.store.service;
 import com.mission.store.domain.Member;
 import com.mission.store.domain.Reservation;
 import com.mission.store.domain.Store;
-import com.mission.store.dto.ReservationRequest;
+import com.mission.store.dto.ReservationRegistration;
 import com.mission.store.repository.MemberRepository;
 import com.mission.store.repository.ReservationRepository;
 import com.mission.store.repository.StoreRepository;
 import com.mission.store.type.ReservationApprovalStatus;
 import com.mission.store.type.StoreStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Objects;
+import java.util.Random;
+
+import static com.mission.store.type.ReservationApprovalStatus.PENDING;
+import static com.mission.store.type.ReservationApprovalStatus.REJECTED;
+import static com.mission.store.type.ReservationVisitStatus.*;
 
 @Service
 @RequiredArgsConstructor
@@ -20,9 +31,8 @@ public class ReservationService {
     private final StoreRepository storeRepository;
     private final MemberRepository memberRepository;
 
-    /** 당일 예약 요청 */ 
-    // TODO Request 필드 값 추가해서 당일 예약이 아닌 그냥 예약으로 변경할지 고민
-    public void reserve(ReservationRequest request) {
+    /** 예약 요청 */
+    public ReservationRegistration.Response reserve(ReservationRegistration.Request request) {
         Long storeId = request.getStoreId();
         Long userId = request.getUserId();
 
@@ -48,21 +58,100 @@ public class ReservationService {
         // 4. 요청 시간대에 이미 예약이 존재하는지 확인
         if (reservationRepository.existsByReservationDateAndReservationTime(request.getReservationDate(), request.getReservationTime())) {
             // TODO DuplicateReservationException
-            throw new RuntimeException("중복된 예약이 존재합니다.");
+            throw new RuntimeException("요청 시간에 중복된 예약이 존재합니다.");
         }
 
-        // 5. 예약
-        reservationRepository.save(Reservation.builder()
+        // 5. 예약 확인을 위한 예약 코드 생성
+        String reservationCode = generateReservationCode();
+
+        // 6. 예약
+        Reservation reservation = reservationRepository.save(Reservation.builder()
                 .store(store)
                 .customer(customer)
                 .reservationDate(request.getReservationDate())
                 .reservationTime(request.getReservationTime())
                 .reservationMemo(request.getReservationMemo())
                 .numberOfCustomer(request.getNumberOfCustomer())
-                .reservationApprovalStatus(ReservationApprovalStatus.PENDING)
+                .reservationCode(reservationCode)
+                .reservationVisitStatus(NOT_VISITED)
+                .reservationApprovalStatus(PENDING)
                 .build());
 
+        return ReservationRegistration.Response.builder()
+                .id(reservation.getId())
+                .reservationCode(reservationCode)
+                .build();
+
     }
+
+    /** 예약 취소 */
+    public void cancelReservation(Long reservationId) {
+        // 1. 예약 여부 확인
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("예약을 찾을 수 없습니다."));
+        
+        // 2. 예약 취소를 요청하는 사용자가 본인인지 확인
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String customerPhoneNumber = reservation.getCustomer().getPhone();
+        String authenticatedUserPhoneNumber = authentication.getName();
+        if (!Objects.equals(customerPhoneNumber, authenticatedUserPhoneNumber)) {
+            throw new RuntimeException("예약 취소는 본인만 가능합니다.");
+        }
+
+        // 3. 이미 방문한 예약이라면 취소할 수 없음
+        if (reservation.getReservationVisitStatus() == VISITED_WITHIN_RESERVATION_TIME) {
+            throw new RuntimeException("이미 방문한 예약은 취소할 수 없습니다.");
+        }
+
+        // 4. 이미 취소된 예약이라면 중복 취소 처리
+        if (reservation.getReservationVisitStatus() == CANCELLED_NOT_VISITED || reservation.getReservationVisitStatus() == CANCELLED_NO_SHOW) {
+            throw new RuntimeException("이미 취소된 예약입니다.");
+        }
+
+        // 5. 예약 취소
+        reservation.updateReservationVisitStatus(CANCELLED_NOT_VISITED);
+        reservationRepository.save(reservation);
+    }
+
+    /** 키오스크 예약 방문 확인 */
+    public void confirmVisit(Long reservationId, String reservationCode) {
+        // 1. 예약 확인
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("예약을 찾을 수 없습니다."));
+
+        // 2. 예약 확인을 요청하는 사용자가 본인인지 확인
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String customerPhoneNumber = reservation.getCustomer().getPhone();
+        String authenticatedUserPhoneNumber = authentication.getName();
+        if (!Objects.equals(customerPhoneNumber, authenticatedUserPhoneNumber)) {
+            throw new RuntimeException("예약 확인은 본인만 가능합니다.");
+        }
+
+        // 3. 예약 승인 여부 확인
+        ReservationApprovalStatus reservationApprovalStatus = reservation.getReservationApprovalStatus();
+        if (reservationApprovalStatus == PENDING) {
+            throw new RuntimeException("예약이 승인되지 않았습니다.");
+        } else if (reservationApprovalStatus == REJECTED) {
+            throw new RuntimeException("거절된 예약입니다.");
+        }
+
+        // 4. 예약 시간 10분전에 도착했는지 확인
+        LocalDateTime reservedAt = LocalDateTime.of(reservation.getReservationDate(), LocalTime.parse(reservation.getReservationTime()));
+        if (reservedAt.isBefore(LocalDateTime.now().minusMinutes(10))) {
+            throw new RuntimeException("방문 10분 전에만 예약 확인이 가능합니다.");
+        }
+
+        // 5. 예약 코드 일치 여부 확인
+        if (!reservation.getReservationCode().equals(reservationCode)) {
+            throw new RuntimeException("예약 코드가 일치하지 않습니다.");
+        }
+
+        // 6. 방문 상태 변경
+        reservation.updateReservationVisitStatus(VISITED_WITHIN_RESERVATION_TIME);
+        reservationRepository.save(reservation);
+    }
+
+    /** 예약 승인 및 거절 */
 
     /** 예약 요청 시간이 휴무 시간의 포함되는지 확인 */
     private boolean isReservationDuringBreakTime(String reservationTime, String storeBreakTime) {
@@ -97,8 +186,11 @@ public class ReservationService {
         return false;
     }
 
-    
-    /** 예약 승인 및 거절 */
-    
-    /** 키오스크 예약 확인 */
+    /** 예약 코드 생성 */
+    public static String generateReservationCode() {
+        Random random = new Random();
+        int randomNumber = random.nextInt(10000); // 0 <= randomNumber <10000
+
+        return String.format("%04d", randomNumber);
+    }
 }
