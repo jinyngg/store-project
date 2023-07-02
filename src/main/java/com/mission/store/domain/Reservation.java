@@ -29,6 +29,9 @@ public class Reservation extends BaseEntity {
     private String reservationMemo; // 예약 메모
     private int numberOfCustomer; // 예약 인원 수
 
+    private String reservationNumber; // 예약번호
+    private String reservationCode; // 예약코드
+
     @Enumerated(EnumType.STRING)
     private ReservationApprovalStatus reservationApprovalStatus; // 예약 승인 상태
 }
