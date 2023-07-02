@@ -3,6 +3,7 @@ package com.mission.store.service;
 import com.mission.store.domain.Member;
 import com.mission.store.domain.Reservation;
 import com.mission.store.domain.Store;
+import com.mission.store.dto.ReservationDto;
 import com.mission.store.dto.ReservationRegistration;
 import com.mission.store.repository.MemberRepository;
 import com.mission.store.repository.ReservationRepository;
@@ -16,8 +17,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import static com.mission.store.type.ReservationApprovalStatus.PENDING;
 import static com.mission.store.type.ReservationApprovalStatus.REJECTED;
@@ -150,6 +153,24 @@ public class ReservationService {
         reservation.updateReservationVisitStatus(VISITED_WITHIN_RESERVATION_TIME);
         reservationRepository.save(reservation);
     }
+    
+    /** 매장 점주가 매장의 예약 확인 */
+    public List<ReservationDto> getReservationsByStoreId(Long storeId) {
+        // 매장 조회
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("매장을 찾을 수 없습니다."));
+
+        // 매장과 관련된 모든 예약 조회
+        List<Reservation> reservations = reservationRepository.findByStore(store);
+        if (reservations.size() == 0) {
+            throw new RuntimeException("매장과 관련된 예약이 존재하지 않습니다.");
+        }
+
+        return reservations.stream()
+                .map(ReservationDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
 
     /** 예약 승인 및 거절 */
 
@@ -179,11 +200,7 @@ public class ReservationService {
             return true;
         } else if (reservationHour == startHour && reservationMinute >= startMinute) {
             return true;
-        } else if (reservationHour == endHour && reservationMinute <= endMinute) {
-            return true;
-        }
-
-        return false;
+        } else return reservationHour == endHour && reservationMinute <= endMinute;
     }
 
     /** 예약 코드 생성 */
