@@ -28,7 +28,6 @@ public class StoreService {
     /** 매장 등록 */
     @Transactional
     public void registerStore(Long memberId, StoreRegistration request) {
-
         // 1. 회원 확인
         Member owner = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 회원입니다."));

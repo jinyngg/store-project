@@ -44,5 +44,4 @@ public class MemberController {
         return ResponseEntity.ok().body(memberService.refresh(tokenRequestDto));
     }
 
-
 }

@@ -46,14 +46,14 @@ public class MemberService {
         });
 
         // 4. 패스워드 암호화 후 저장
-        String encPassword = passwordEncoder.encode(request.getPassword());
+        String encryptionPassword = passwordEncoder.encode(request.getPassword());
 
         memberRepository.save(Member.builder()
                 .email(request.getEmail())
                 .phone(request.getPhone())
                 .nickname(request.getNickname())
 //                .password(request.getPassword())
-                .password(encPassword)
+                .password(encryptionPassword)
                 .memberStatus(MemberStatus.ACTIVE)
                 .memberRole(request.getMemberRole())
                 .registeredAt(LocalDateTime.now())
@@ -71,12 +71,13 @@ public class MemberService {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
 
-//        // Token(Access + Refresh) 발급
+        // Token(Access + Refresh) 발급
         TokenDto tokenDto = jwtProvider.GenerateToken(member.getPhone(), member.getMemberRole());
         String refreshToken = tokenDto.getRefreshToken();
         Long memberId = member.getId();
 
         RefreshToken currentToken = refreshTokenRepository.findByKey(memberId).orElse(null);
+
         if (currentToken != null) {
             currentToken.updateToken(refreshToken);
             refreshTokenRepository.save(currentToken);
