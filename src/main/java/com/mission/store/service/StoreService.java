@@ -61,6 +61,23 @@ public class StoreService {
                 .build());
     }
     
+    /** 매장 전체 보기 */
+    public List<StoreDto> getStores() {
+        List<Store> stores = storeRepository.findAll();
+
+        return stores.stream()
+                .map(StoreDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /** 매장 상세 보기 */
+    public StoreDto getStoreById(Long id) {
+        Store store = storeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("매장을 찾을 수 없습니다."));
+
+        return StoreDto.fromEntity(store);
+    }
+
     /** 매장 검색 */
     public List<StoreSearchResult> searchStoresByName(String name) {
         List<Store> stores = storeRepository.findAllByNameContainingIgnoreCase(name);
@@ -74,11 +91,18 @@ public class StoreService {
                 .collect(Collectors.toList());
     }
 
-    /** 매장 상세 보기 */
-    public StoreDto getStoreById(Long id) {
-        Store store = storeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("매장을 찾을 수 없습니다."));
+    /** 점주가 관리하는 매장 조회 */
+    public List<StoreDto> getStoresByOwnerId(Long memberId) {
+        Member owner = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 회원입니다."));
+        List<Store> stores = storeRepository.findAllByOwner(owner);
 
-        return StoreDto.fromEntity(store);
+        if (stores.size() == 0) {
+            throw new RuntimeException("점주가 관리하는 매장이 없습니다.");
+        }
+
+        return stores.stream()
+                .map(StoreDto::fromEntity)
+                .collect(Collectors.toList());
     }
 }

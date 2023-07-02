@@ -18,4 +18,7 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
     // 매장 이름 검색 (대소문자 구분하지 않으며 입력 값 포함 여부 확인)
     List<Store> findAllByNameContainingIgnoreCase(String name);
 
+    // 점주가 관리하는 매장 조회
+    List<Store> findAllByOwner(Member owner);
+
 }

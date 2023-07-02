@@ -55,6 +55,7 @@ public class SecurityConfiguration {
                 // 점주 권한
                 .antMatchers(
                         "/store/api/v1/store/register/**"
+                        , "/store/api/v1/stores/owner/{id}"
                 )
                 .hasRole("OWNER")
 
@@ -62,14 +63,15 @@ public class SecurityConfiguration {
                 .antMatchers(
                         "/store/api/v1/reservations"
                         , "/store/api/v1/reservations/{reservationId}/cancel"
-                        , "/store/api/v1/reservations/{reservationId}/kiosk/confirm"
+                        , "/store/api/v1/reservations/{reservationId}/kiosk/visit"
                 )
                 .hasAnyRole("CUSTOMER", "OWNER")
 
                 // 권한 없이 사용
                 .antMatchers(
-                        "/store/api/v1/store/search"
-                        , "/store/api/v1//store/{id}"
+                        "/store/api/v1/stores"
+                        , "/store/api/v1/stores/{id}"
+                        , "/store/api/v1/stores/search"
                 )
                 .permitAll()
 

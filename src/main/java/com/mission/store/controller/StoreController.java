@@ -32,9 +32,25 @@ public class StoreController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
     
+    /** 매장 전체 보기 */
+    @GetMapping("/stores")
+    public ResponseEntity<?> getStores() {
+        List<StoreDto> stores = storeService.getStores();
+
+        Map<String, List<StoreDto>> response = new HashMap<>();
+        response.put("stores", stores);
+        return ResponseEntity.ok().body(response);
+    }
+    
+    /** 매장 상세 보기 */
+    @GetMapping("/stores/{id}")
+    public ResponseEntity<?> getStoreById(@PathVariable Long id) {
+        return ResponseEntity.ok().body(storeService.getStoreById(id));
+    }
+
     /** 매장 검색 */
-    @GetMapping("/store/search")
-    public ResponseEntity<Map<String, List<StoreSearchResult>>> searchStores(
+    @GetMapping("/stores/search")
+    public ResponseEntity<?> searchStores(
             @RequestParam("name") String name) {
         List<StoreSearchResult> storeSearchResults = storeService.searchStoresByName(name);
 
@@ -43,10 +59,14 @@ public class StoreController {
 
         return ResponseEntity.ok().body(response);
     }
-    
-    /** 매장 상세 보기 */
-    @GetMapping("/store/{id}")
-    public ResponseEntity<StoreDto> getStoreById(@PathVariable Long id) {
-        return ResponseEntity.ok().body(storeService.getStoreById(id));
+
+    /** 점주가 관리하는 매장 조회 */
+    @GetMapping("/stores/owner/{id}")
+    public ResponseEntity<?> getStoresByOwnerId(@PathVariable Long id) {
+        List<StoreDto> stores = storeService.getStoresByOwnerId(id);
+
+        Map<String, List<StoreDto>> response = new HashMap<>();
+        response.put("stores", stores);
+        return ResponseEntity.ok().body(response);
     }
 }
