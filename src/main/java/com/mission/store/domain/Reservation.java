@@ -37,4 +37,8 @@ public class Reservation extends BaseEntity {
     public void updateReservationVisitStatus(ReservationVisitStatus reservationVisitStatus) {
         this.reservationVisitStatus = reservationVisitStatus;
     }
+
+    public void updateReservationApprovalStatus(ReservationApprovalStatus reservationApprovalStatus) {
+        this.reservationApprovalStatus = reservationApprovalStatus;
+    }
 }

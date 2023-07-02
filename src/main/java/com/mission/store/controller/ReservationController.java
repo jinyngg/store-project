@@ -6,6 +6,7 @@ import com.mission.store.dto.ReservationRegistration;
 import com.mission.store.dto.StoreDto;
 import com.mission.store.repository.StoreRepository;
 import com.mission.store.service.ReservationService;
+import com.mission.store.type.ReservationApprovalStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +48,7 @@ public class ReservationController {
         return ResponseEntity.ok().build();
     }
 
-    /** 매장 점주가 매장의 예약 확인 */
+    /** 매장 점주가 매장의 매장 정보와 해당 매장의 모든 예약 확인 */
     @GetMapping("/stores/{id}/reservations")
     public ResponseEntity<?> getReservationsByStoreId(@PathVariable Long id) {
         Store store = storeRepository.findById(id)
@@ -59,5 +60,14 @@ public class ReservationController {
         response.put("store", storeDto);
         response.put("reservations", reservations);
         return ResponseEntity.ok().body(response);
+    }
+
+    /** 매장 점주가 예약 승인 및 거절 */
+    @PostMapping("/reservations/{id}/approval")
+    public ResponseEntity<String> approveOrRejectReservation(
+            @PathVariable Long id
+            , @RequestParam ReservationApprovalStatus status) {
+        reservationService.approveOrRejectReservation(id, status);
+        return ResponseEntity.ok().build();
     }
 }
