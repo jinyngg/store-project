@@ -64,6 +64,7 @@ public class SecurityConfiguration {
                         "/store/api/v1/reservations"
                         , "/store/api/v1/reservations/{reservationId}/cancel"
                         , "/store/api/v1/reservations/{reservationId}/kiosk/visit"
+                        , "/store/api/v1/reviews"
                 )
                 .hasAnyRole("CUSTOMER", "OWNER")
 

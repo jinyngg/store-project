@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Getter
 @NoArgsConstructor
@@ -24,12 +24,16 @@ public class Review extends BaseEntity {
     @JoinColumn(name = "member_id", referencedColumnName = "id", nullable = false)
     private Member reviewer;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reservation_id", referencedColumnName = "id", nullable = false)
+    private Reservation reservation;
+
     private String message; // 상점 리뷰
-    private double rating; // 상점 리뷰 점수(0.0 - 5.0)
+    private float rating; // 상점 리뷰 점수(0.0 - 5.0)
 
     @Enumerated(EnumType.STRING)
     private ReviewStatus reviewStatus; // 리뷰 공개 상태
 
     @Column(nullable = false)
-    private LocalDateTime visitedAt; // 방문 날짜
+    private LocalDate visitedDate; // 방문 날짜
 }

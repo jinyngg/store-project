@@ -22,12 +22,15 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import static com.mission.store.type.ReservationApprovalStatus.*;
+import static com.mission.store.type.ReservationApprovalStatus.PENDING;
+import static com.mission.store.type.ReservationApprovalStatus.REJECTED;
 import static com.mission.store.type.ReservationVisitStatus.*;
 
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
+
+    private static final int ARRIVAL_THRESHOLD_MINUTES = 10;
 
     private final ReservationRepository reservationRepository;
     private final StoreRepository storeRepository;
@@ -36,7 +39,7 @@ public class ReservationService {
     /** 예약 요청 */
     public ReservationRegistration.Response reserve(ReservationRegistration.Request request) {
         Long storeId = request.getStoreId();
-        Long userId = request.getUserId();
+        Long userId = request.getCustomerId();
 
         // 1. 매장 및 유저 확인
         Store store = storeRepository.findById(storeId)
@@ -94,9 +97,9 @@ public class ReservationService {
         
         // 2. 예약 취소를 요청하는 사용자가 본인인지 확인
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String customerPhoneNumber = reservation.getCustomer().getPhone();
-        String authenticatedUserPhoneNumber = authentication.getName();
-        if (!Objects.equals(customerPhoneNumber, authenticatedUserPhoneNumber)) {
+        String authenticatedUserEmail = authentication.getName();
+        String customerEmail = reservation.getCustomer().getEmail();
+        if (!Objects.equals(customerEmail, authenticatedUserEmail)) {
             throw new RuntimeException("예약 취소는 본인만 가능합니다.");
         }
 
@@ -131,7 +134,7 @@ public class ReservationService {
 
         // 3. 예약 시간 10분전에 도착했는지 확인
         LocalDateTime reservedAt = LocalDateTime.of(reservation.getReservationDate(), LocalTime.parse(reservation.getReservationTime()));
-        if (reservedAt.isBefore(LocalDateTime.now().minusMinutes(10))) {
+        if (reservedAt.isBefore(LocalDateTime.now().minusMinutes(ARRIVAL_THRESHOLD_MINUTES))) {
             throw new RuntimeException("방문 10분 전에만 예약 확인이 가능합니다.");
         }
 
@@ -164,15 +167,25 @@ public class ReservationService {
 
     /** 예약 승인 및 거절 */
     public void approveOrRejectReservation(Long reservationId, ReservationApprovalStatus approvalStatus) {
+        // 1. 예약 확인
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("예약을 찾을 수 없습니다."));
 
-        // 이미 승인된 예약인 경우 예외 처리
+        // 2. 예약 승인 또는 거절 권한 확인
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String authenticatedUserEmail = authentication.getName();
+        Member owner = reservation.getStore().getOwner();
+        String ownerEmail = owner.getEmail();
+        if (!Objects.equals(ownerEmail, authenticatedUserEmail)) {
+            throw new RuntimeException("예약 승인 또는 거절은 해당 매장의 주인만 가능합니다.");
+        }
+
+        // 3. 이미 승인된 예약인 경우 예외 처리
         if (reservation.getReservationApprovalStatus() != PENDING) {
             throw new RuntimeException("승인이 처리된 예약입니다.");
         }
 
-        // 예약 승인 또는 거절 처리
+        // 4. 예약 승인 또는 거절 처리
         reservation.updateReservationApprovalStatus(approvalStatus);
         reservationRepository.save(reservation);
     }

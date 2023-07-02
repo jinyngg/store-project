@@ -18,7 +18,7 @@ public class ReservationRegistration {
         @NotNull(message = "매장 정보는 필수 입력 항목입니다.")
         private Long storeId;
         @NotNull(message = "손님 정보는 필수 입력 항목입니다.")
-        private Long userId;
+        private Long customerId;
 
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
         private LocalDate reservationDate; // 예약 시간(2023.06.22)
