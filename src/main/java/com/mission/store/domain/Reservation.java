@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Getter
 @NoArgsConstructor
@@ -24,12 +24,11 @@ public class Reservation extends BaseEntity {
     @JoinColumn(name = "member_id", referencedColumnName = "id", nullable = false)
     private Member customer;
 
-     private int numberOfCustomer; // 예약 인원 수
-     private String reservationMemo; // 예약 메모
+    private LocalDate reservationDate; // 예약 시간(2023.06.22)
+    private String reservationTime; // 예약 시간(13:00)
+    private String reservationMemo; // 예약 메모
+    private int numberOfCustomer; // 예약 인원 수
 
     @Enumerated(EnumType.STRING)
     private ReservationApprovalStatus reservationApprovalStatus; // 예약 승인 상태
-
-    private LocalDateTime requestedAt; // 예약 요청 시간
-    private String reservedAt; // 예약 시간(23-06-22 오후 1시)
 }

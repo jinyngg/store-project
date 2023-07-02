@@ -17,11 +17,11 @@ import javax.validation.Valid;
 @RequiredArgsConstructor
 public class ReservationController {
 
-    private ReservationService reservationService;
+    private final ReservationService reservationService;
 
-    /** 당일 예약 요청 */
+    /** 예약 생성 */
     @PostMapping("/reservation")
-    public ResponseEntity<?> register(
+    public ResponseEntity<?> reserve(
             @Valid @RequestBody ReservationRequest request) {
         reservationService.reserve(request);
 
