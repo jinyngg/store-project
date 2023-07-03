@@ -21,7 +21,7 @@ public class ReviewController {
     /** 리뷰 작성 */
     @PostMapping("/reviews")
     public ResponseEntity<?> createReview(@Valid @RequestBody ReviewRegistration request) {
-        reviewService.review(request);
+        reviewService.writeReview(request);
         return ResponseEntity.ok().build();
     }
 }
