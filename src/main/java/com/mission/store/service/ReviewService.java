@@ -4,6 +4,8 @@ import com.mission.store.domain.Reservation;
 import com.mission.store.domain.Review;
 import com.mission.store.domain.Store;
 import com.mission.store.dto.ReviewRegistration;
+import com.mission.store.exception.ReservationException;
+import com.mission.store.exception.ReviewException;
 import com.mission.store.repository.ReservationRepository;
 import com.mission.store.repository.ReviewRepository;
 import com.mission.store.repository.StoreRepository;
@@ -14,6 +16,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
+
+import static com.mission.store.type.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -27,26 +31,26 @@ public class ReviewService {
     public void review(ReviewRegistration request) {
         // 1. 예약 번호 확인
         Reservation reservation = reservationRepository.findById(request.getReservationId())
-                .orElseThrow(() -> new RuntimeException("올바르지 않은 예약번호입니다."));
+                .orElseThrow(() -> new ReservationException(INVALID_RESERVATION_ID));
 
         // 2. 리뷰어가 예약한 매장 손님인지 확인
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String authenticatedUserEmail = authentication.getName();
         String customerEmail = reservation.getCustomer().getEmail();
         if (!Objects.equals(customerEmail, authenticatedUserEmail)) {
-            throw new RuntimeException("리뷰 작성은 본인만 가능합니다.");
+            throw new ReviewException(ACCESS_DENIED_FOR_REVIEW);
         }
 
         // 3. 이미 작성된 리뷰가 있는지 확인
         Review review = reviewRepository.findByReservation(reservation);
         if (review != null) {
-            throw new RuntimeException("이미 리뷰를 작성한 예약입니다.");
+            throw new ReviewException(ALREADY_WRITTEN_REVIEW);
         }
 
         // 4. 리뷰어가 작성할 수 있는 리뷰 상태 확인
         ReviewStatus reviewStatus = request.getReviewStatus();
         if (!(reviewStatus == ReviewStatus.PUBLIC || reviewStatus == ReviewStatus.OWNER_PUBLIC)) {
-            throw new RuntimeException("공개 또는 점주 공개만 가능합니다.");
+            throw new ReviewException(INVALID_REVIEW_TYPE);
         }
 
         // 5. 리뷰 작성

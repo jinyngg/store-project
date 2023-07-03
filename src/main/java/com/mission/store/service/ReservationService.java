@@ -5,11 +5,13 @@ import com.mission.store.domain.Reservation;
 import com.mission.store.domain.Store;
 import com.mission.store.dto.ReservationDto;
 import com.mission.store.dto.ReservationRegistration;
+import com.mission.store.exception.MemberException;
+import com.mission.store.exception.ReservationException;
+import com.mission.store.exception.StoreException;
 import com.mission.store.repository.MemberRepository;
 import com.mission.store.repository.ReservationRepository;
 import com.mission.store.repository.StoreRepository;
 import com.mission.store.type.ReservationApprovalStatus;
-import com.mission.store.type.StoreStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,9 +24,11 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import static com.mission.store.type.ErrorCode.*;
 import static com.mission.store.type.ReservationApprovalStatus.PENDING;
 import static com.mission.store.type.ReservationApprovalStatus.REJECTED;
 import static com.mission.store.type.ReservationVisitStatus.*;
+import static com.mission.store.type.StoreStatus.OPEN;
 
 @Service
 @RequiredArgsConstructor
@@ -39,18 +43,18 @@ public class ReservationService {
     /** 예약 요청 */
     public ReservationRegistration.Response reserve(ReservationRegistration.Request request) {
         Long storeId = request.getStoreId();
-        Long userId = request.getCustomerId();
+        Long memberId = request.getCustomerId();
 
         // 1. 매장 및 유저 확인
         Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 매장입니다."));
+                .orElseThrow(() -> new StoreException(INVALID_STORE_ID));
 
-        Member customer = memberRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 회원입니다."));
+        Member customer = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberException(INVALID_MEMBER_ID));
 
         // 2. 매장 영업 여부 확인
-        if (store.getStoreStatus() != StoreStatus.OPEN) {
-            throw new RuntimeException("매장이 현재 영업 중이지 않습니다.");
+        if (store.getStoreStatus() != OPEN) {
+            throw new StoreException(STORE_CLOSED);
         }
 
         // 3. 휴무 시간 예약 여부 확인
@@ -60,13 +64,12 @@ public class ReservationService {
                 && !storeBreakTime.isEmpty()
                 && reservationTime != null
                 && isReservationDuringBreakTime(reservationTime, storeBreakTime)) {
-            throw new RuntimeException("휴무 시간에는 예약이 불가능합니다.");
+            throw new ReservationException(NOT_AVAILABLE_DURING_BREAK_TIME);
         }
 
         // 4. 요청 시간대에 이미 예약이 존재하는지 확인
         if (reservationRepository.existsByReservationDateAndReservationTime(request.getReservationDate(), request.getReservationTime())) {
-            // TODO DuplicateReservationException
-            throw new RuntimeException("요청 시간에 중복된 예약이 존재합니다.");
+            throw new ReservationException(DUPLICATE_RESERVATION);
         }
 
         // 5. 예약 확인을 위한 예약 코드 생성
@@ -96,24 +99,24 @@ public class ReservationService {
     public void cancelReservation(Long reservationId) {
         // 1. 예약 여부 확인
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("예약을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ReservationException(INVALID_RESERVATION_ID));
         
         // 2. 예약 취소를 요청하는 사용자가 본인인지 확인
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String authenticatedUserEmail = authentication.getName();
         String customerEmail = reservation.getCustomer().getEmail();
         if (!Objects.equals(customerEmail, authenticatedUserEmail)) {
-            throw new RuntimeException("예약 취소는 본인만 가능합니다.");
+            throw new ReservationException(ACCESS_DENIED_FOR_CANCELLATION);
         }
 
         // 3. 이미 방문한 예약이라면 취소할 수 없음
         if (reservation.getReservationVisitStatus() == VISITED_WITHIN_RESERVATION_TIME) {
-            throw new RuntimeException("이미 방문한 예약은 취소할 수 없습니다.");
+            throw new ReservationException(ALREADY_VISITED_RESERVATION);
         }
 
         // 4. 이미 취소된 예약이라면 중복 취소 처리
         if (reservation.getReservationVisitStatus() == CANCELLED_NOT_VISITED || reservation.getReservationVisitStatus() == CANCELLED_NO_SHOW) {
-            throw new RuntimeException("이미 취소된 예약입니다.");
+            throw new ReservationException(ALREADY_CANCELED_RESERVATION);
         }
 
         // 5. 예약 취소
@@ -125,25 +128,25 @@ public class ReservationService {
     public void confirmVisit(Long reservationId, String reservationCode) {
         // 1. 예약 확인
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("예약을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ReservationException(INVALID_RESERVATION_ID));
 
         // 2. 예약 승인 여부 확인
         ReservationApprovalStatus reservationApprovalStatus = reservation.getReservationApprovalStatus();
         if (reservationApprovalStatus == PENDING) {
-            throw new RuntimeException("예약이 승인되지 않았습니다.");
+            throw new ReservationException(UNAPPROVED_RESERVATION);
         } else if (reservationApprovalStatus == REJECTED) {
-            throw new RuntimeException("거절된 예약입니다.");
+            throw new ReservationException(DECLINED_RESERVATION);
         }
 
         // 3. 예약 시간 10분전에 도착했는지 확인
         LocalDateTime reservedAt = LocalDateTime.of(reservation.getReservationDate(), LocalTime.parse(reservation.getReservationTime()));
         if (reservedAt.isBefore(LocalDateTime.now().minusMinutes(ARRIVAL_THRESHOLD_MINUTES))) {
-            throw new RuntimeException("방문 10분 전에만 예약 확인이 가능합니다.");
+            throw new ReservationException(UNABLE_TO_CONFIRM_RESERVATION);
         }
 
         // 4. 예약 코드 일치 여부 확인
         if (!reservation.getReservationCode().equals(reservationCode)) {
-            throw new RuntimeException("예약 코드가 일치하지 않습니다.");
+            throw new ReservationException(MISMATCHED_RESERVATION_CODE);
         }
 
         // 5. 방문 상태 변경
@@ -155,12 +158,12 @@ public class ReservationService {
     public List<ReservationDto> getReservationsByStoreId(Long storeId) {
         // 매장 조회
         Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("매장을 찾을 수 없습니다."));
+                .orElseThrow(() -> new StoreException(INVALID_STORE_ID));
 
         // 매장과 관련된 모든 예약 조회
         List<Reservation> reservations = reservationRepository.findByStore(store);
         if (reservations.size() == 0) {
-            throw new RuntimeException("매장과 관련된 예약이 존재하지 않습니다.");
+            throw new ReservationException(NO_RESERVATION_RELATED_TO_STORE);
         }
 
         return reservations.stream()
@@ -172,7 +175,7 @@ public class ReservationService {
     public void approveOrRejectReservation(Long reservationId, ReservationApprovalStatus approvalStatus) {
         // 1. 예약 확인
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("예약을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ReservationException(INVALID_RESERVATION_ID));
 
         // 2. 예약 승인 또는 거절 권한 확인
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -180,12 +183,12 @@ public class ReservationService {
         Member owner = reservation.getStore().getOwner();
         String ownerEmail = owner.getEmail();
         if (!Objects.equals(ownerEmail, authenticatedUserEmail)) {
-            throw new RuntimeException("예약 승인 또는 거절은 해당 매장의 주인만 가능합니다.");
+            throw new ReservationException(ACCESS_DENIED_APPROVE_OR_REJECT);
         }
 
         // 3. 이미 승인된 예약인 경우 예외 처리
         if (reservation.getReservationApprovalStatus() != PENDING) {
-            throw new RuntimeException("승인이 처리된 예약입니다.");
+            throw new ReservationException(ALREADY_PROCESSED_RESERVATION);
         }
 
         // 4. 예약 승인 또는 거절 처리

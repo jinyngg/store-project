@@ -5,10 +5,11 @@ import com.mission.store.domain.Store;
 import com.mission.store.dto.StoreDto;
 import com.mission.store.dto.StoreRegistration;
 import com.mission.store.dto.StoreSearchResult;
+import com.mission.store.exception.MemberException;
+import com.mission.store.exception.StoreException;
 import com.mission.store.repository.MemberRepository;
 import com.mission.store.repository.StoreRepository;
 import com.mission.store.type.MemberRole;
-import com.mission.store.type.StoreStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,11 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.mission.store.type.ErrorCode.*;
+import static com.mission.store.type.StoreStatus.OPEN;
+
 @Service
 @RequiredArgsConstructor
 public class StoreService {
 
-    private final static int OPEN_STORE_COUNT = 3;
+    private final static int OPEN_STORE_COUNT = 2;
 
     private final MemberRepository memberRepository;
     private final StoreRepository storeRepository;
@@ -30,29 +34,30 @@ public class StoreService {
     public StoreRegistration.Response registerStore(Long memberId, StoreRegistration.Request request) {
         // 1. 회원 확인
         Member owner = memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 회원입니다."));
+                .orElseThrow(() -> new MemberException(INVALID_MEMBER_ID));
 
         // 2. 점주 권한 확인
         if (owner.getMemberRole() != MemberRole.OWNER) {
-            throw new RuntimeException("점주 권한이 없습니다. 파트너 회원 가입이 필요합니다.");
+            throw new MemberException(NO_PARTNER_AUTHORITY);
         }
         
         // 3. "영업" 상태인 매장의 개수가 3개 이상일 경우 등록 불가능
-        if (storeRepository.countByOwnerAndStoreStatus(owner, StoreStatus.OPEN) >= OPEN_STORE_COUNT) {
-            throw new RuntimeException("등록할 수 있는 매장 수를 초과했습니다. (최대 3개)");
+        if (storeRepository.countByOwnerAndStoreStatus(owner, OPEN) >= OPEN_STORE_COUNT) {
+            throw new StoreException(EXCEEDED_MAX_STORE_LIMIT);
         }
 
         // 4. 주소와 위치(위도, 경도)가 같은 매장을 등록할 경우 등록 불가능
         if (storeRepository.existsByOwnerAndAddressAndLatAndLon(owner, request.getAddress(), request.getLat(), request.getLon())) {
-            throw new RuntimeException("등록된 매장 중 중복된 매장이 존재합니다.");
+            throw new StoreException(DUPLICATE_STORE);
         }
 
+        // TODO 등록 심사 과정이 필요할 경우 로직 변경(storeStatus)
         Store store = storeRepository.save(Store.builder()
                 .owner(owner)
                 .name(request.getName())
                 .address(request.getAddress())
                 .description(request.getDescription())
-                .storeStatus(StoreStatus.OPEN) // TODO 등록 심사 과정이 필요할 경우 로직 변경
+                .storeStatus(OPEN)
                 .lat(request.getLat())
                 .lon(request.getLon())
                 .reviewCount(0)
@@ -75,9 +80,9 @@ public class StoreService {
     }
 
     /** 매장 상세 보기 */
-    public StoreDto getStoreById(Long id) {
-        Store store = storeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("매장을 찾을 수 없습니다."));
+    public StoreDto getStoreById(Long storeId) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new StoreException(INVALID_STORE_ID));
 
         return StoreDto.fromEntity(store);
     }
@@ -87,7 +92,7 @@ public class StoreService {
         List<Store> stores = storeRepository.findAllByNameContainingIgnoreCase(name);
 
         if (stores.size() == 0) {
-            throw new RuntimeException("검색된 매장이 없습니다.");
+            throw new StoreException(NO_SEARCH_RESULTS);
         }
 
         return stores.stream()
@@ -98,11 +103,11 @@ public class StoreService {
     /** 점주가 관리하는 매장 조회 */
     public List<StoreDto> getStoresByOwnerId(Long memberId) {
         Member owner = memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 회원입니다."));
+                .orElseThrow(() -> new MemberException(INVALID_MEMBER_ID));
         List<Store> stores = storeRepository.findAllByOwner(owner);
 
         if (stores.size() == 0) {
-            throw new RuntimeException("점주가 관리하는 매장이 없습니다.");
+            throw new StoreException(NO_SEARCH_RESULTS);
         }
 
         return stores.stream()
