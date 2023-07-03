@@ -4,6 +4,7 @@ import com.mission.store.domain.Store;
 import com.mission.store.dto.ReservationDto;
 import com.mission.store.dto.ReservationRegistration;
 import com.mission.store.dto.StoreDto;
+import com.mission.store.exception.StoreException;
 import com.mission.store.repository.StoreRepository;
 import com.mission.store.service.ReservationService;
 import com.mission.store.type.ReservationApprovalStatus;
@@ -16,6 +17,8 @@ import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.mission.store.type.ErrorCode.INVALID_STORE_ID;
 
 @RequestMapping("/store/api/v1")
 @RestController
@@ -52,7 +55,7 @@ public class ReservationController {
     @GetMapping("/stores/{id}/reservations")
     public ResponseEntity<?> getReservationsByStoreId(@PathVariable Long id) {
         Store store = storeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("매장을 찾을 수 없습니다."));
+                .orElseThrow(() -> new StoreException(INVALID_STORE_ID));
         StoreDto storeDto = StoreDto.fromEntity(store);
         List<ReservationDto> reservations = reservationService.getReservationsByStoreId(id);
 

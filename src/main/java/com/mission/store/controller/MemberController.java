@@ -41,7 +41,7 @@ public class MemberController {
     @PostMapping("/member/refresh")
     public ResponseEntity<?> refresh(
             @RequestBody TokenRequestDto tokenRequestDto) {
-        return ResponseEntity.ok().body(memberService.refresh(tokenRequestDto));
+        return ResponseEntity.ok().body(memberService.refreshToken(tokenRequestDto));
     }
 
 }
