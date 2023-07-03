@@ -69,7 +69,7 @@ public class MemberServiceImpl implements MemberService {
 
     /** 회원 정보 저장 */
     private void saveMember(MemberRegistration request, String encryptionPassword) {
-        Member member = Member.builder()
+        memberRepository.save(Member.builder()
                 .email(request.getEmail())
                 .phone(request.getPhone())
                 .nickname(request.getNickname())
@@ -77,9 +77,7 @@ public class MemberServiceImpl implements MemberService {
                 .memberStatus(MemberStatus.ACTIVE)
                 .memberRole(request.getMemberRole())
                 .registeredAt(LocalDateTime.now())
-                .build();
-
-        memberRepository.save(member);
+                .build());
     }
 
     @Override

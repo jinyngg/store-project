@@ -81,7 +81,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     /** 리뷰 저장 */
     private void saveReview(Reservation reservation, ReviewRegistration request) {
-        Review review = Review.builder()
+        reviewRepository.save(Review.builder()
                 .store(reservation.getStore())
                 .reviewer(reservation.getCustomer())
                 .reservation(reservation)
@@ -89,9 +89,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .rating(request.getRating())
                 .reviewStatus(request.getReviewStatus())
                 .visitedDate(reservation.getReservationDate())
-                .build();
-
-        reviewRepository.save(review);
+                .build());
     }
 
     /** 상점의 리뷰 정보 업데이트 */

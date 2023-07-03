@@ -35,7 +35,7 @@ public class StoreServiceImpl implements StoreService {
     @Transactional
     public StoreRegistration.Response registerStore(Long memberId, StoreRegistration.Request request) {
         // 1. 매장 점주 조회
-        Member owner = getOwner(memberId);
+        Member owner = getOwnerById(memberId);
 
         // 2. 파트너 회원(점주 권한) 확인
         validateOwnerRole(owner);
@@ -54,7 +54,7 @@ public class StoreServiceImpl implements StoreService {
     }
 
     /** 회원 ID로 매장 점주 조회 */
-    private Member getOwner(Long memberId) {
+    private Member getOwnerById(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(INVALID_MEMBER_ID));
     }
