@@ -17,7 +17,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MemberException.class)
     public ResponseEntity<?> handleMemberException(MemberException e) {
-        log.error("{} is occurred.", e.getErrorCode());
+        log.error("{} is occurred. {}", e.getErrorCode(), e.getErrorMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(e.getErrorCode(), e.getErrorMessage());
         HttpStatus httpStatus = e.getHttpStatus();
@@ -27,7 +27,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(StoreException.class)
     public ResponseEntity<?> handleStoreException(StoreException e) {
-        log.error("{} is occurred.", e.getErrorCode());
+        log.error("{} is occurred. {}", e.getErrorCode(), e.getErrorMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(e.getErrorCode(), e.getErrorMessage());
         HttpStatus httpStatus = e.getHttpStatus();
@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ReservationException.class)
     public ResponseEntity<?> handleReservationException(ReservationException e) {
-        log.error("{} is occurred.", e.getErrorCode());
+        log.error("{} is occurred. {}", e.getErrorCode(), e.getErrorMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(e.getErrorCode(), e.getErrorMessage());
         HttpStatus httpStatus = e.getHttpStatus();
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ReviewException.class)
     public ResponseEntity<?> handleReviewException(ReviewException e) {
-        log.error("{} is occurred.", e.getErrorCode());
+        log.error("{} is occurred. {}", e.getErrorCode(), e.getErrorMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(e.getErrorCode(), e.getErrorMessage());
         HttpStatus httpStatus = e.getHttpStatus();
