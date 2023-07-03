@@ -38,24 +38,9 @@ public class JwtProvider {
     @Value("${spring.jwt.secret}")
     private String secretKey;
 
-//    /** 토큰 생성 */
-//    public String GenerateAccessToken(String phone, MemberRole memberRole) {
-//        // Claims -> 구분을 위한 phone, role 삽입
-//        Claims claims = Jwts.claims().setSubject(phone);
-//        claims.put(KEY_ROLE, memberRole);
-//
-//        Date now = new Date();
-//        Date expiredDate = new Date(now.getTime() + ACCESS_TOKEN_EXPIRE_TIME);
-//
-//        return Jwts.builder()
-//                .setClaims(claims)
-//                .setIssuedAt(now)
-//                .setExpiration(expiredDate)
-//                .signWith(SignatureAlgorithm.HS512, secretKey)
-//                .compact();
-//    }
-
     /** 토큰 생성 */
+    // TODO 리프레시 토큰으로 엑세스 토큰 재발급 로직 필요
+    // TODO 리프레시 토큰으로 토큰(엑세스 + 리프레시) 재발급 이후 DB 저장
     public TokenDto GenerateToken(String phone, MemberRole memberRole) {
 //        // Claims -> 구분을 위한 phone, role 삽입
         Claims claims = Jwts.claims().setSubject(phone);
