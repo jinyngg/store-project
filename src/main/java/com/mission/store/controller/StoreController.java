@@ -25,11 +25,8 @@ public class StoreController {
     @PostMapping("/store/register/{memberId}")
     public ResponseEntity<?> register(
             @PathVariable Long memberId
-            , @Valid @RequestBody StoreRegistration request) {
-        // TODO BindingResult 공부
-        storeService.registerStore(memberId, request);
-
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+            , @Valid @RequestBody StoreRegistration.Request request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(storeService.registerStore(memberId, request));
     }
     
     /** 매장 전체 보기 */

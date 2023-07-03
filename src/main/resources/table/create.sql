@@ -41,7 +41,7 @@ CREATE TABLE reservation (
                              reservation_memo VARCHAR(255),
                              number_of_customer INT,
                              reservation_code VARCHAR(4),
-                             reservation_visit_status VARCHAR(20),
+                             reservation_visit_status VARCHAR(50),
                              reservation_approval_status VARCHAR(20),
                              created_at DATETIME NOT NULL,
                              updated_at DATETIME NOT NULL,

@@ -27,7 +27,7 @@ public class StoreService {
 
     /** 매장 등록 */
     @Transactional
-    public void registerStore(Long memberId, StoreRegistration request) {
+    public StoreRegistration.Response registerStore(Long memberId, StoreRegistration.Request request) {
         // 1. 회원 확인
         Member owner = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 회원입니다."));
@@ -47,7 +47,7 @@ public class StoreService {
             throw new RuntimeException("등록된 매장 중 중복된 매장이 존재합니다.");
         }
 
-        storeRepository.save(Store.builder()
+        Store store = storeRepository.save(Store.builder()
                 .owner(owner)
                 .name(request.getName())
                 .address(request.getAddress())
@@ -59,6 +59,10 @@ public class StoreService {
                 .businessHours(request.getBusinessHours())
                 .breakTime(request.getBreakTime())
                 .build());
+
+        return StoreRegistration.Response.builder()
+                .id(store.getId())
+                .build();
     }
     
     /** 매장 전체 보기 */

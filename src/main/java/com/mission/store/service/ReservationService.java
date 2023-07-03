@@ -56,8 +56,11 @@ public class ReservationService {
         // 3. 휴무 시간 예약 여부 확인
         String storeBreakTime = store.getBreakTime();
         String reservationTime = request.getReservationTime();
-        if (storeBreakTime != null && !storeBreakTime.isEmpty() && reservationTime != null && isReservationDuringBreakTime(reservationTime, storeBreakTime)) {
-            throw new IllegalStateException("휴무 시간에는 예약이 불가능합니다.");
+        if (storeBreakTime != null
+                && !storeBreakTime.isEmpty()
+                && reservationTime != null
+                && isReservationDuringBreakTime(reservationTime, storeBreakTime)) {
+            throw new RuntimeException("휴무 시간에는 예약이 불가능합니다.");
         }
 
         // 4. 요청 시간대에 이미 예약이 존재하는지 확인
@@ -216,7 +219,7 @@ public class ReservationService {
             return true;
         } else if (reservationHour == startHour && reservationMinute >= startMinute) {
             return true;
-        } else return reservationHour == endHour && reservationMinute <= endMinute;
+        } else return reservationHour == endHour && reservationMinute < endMinute;
     }
 
     /** 예약 코드 생성 */
