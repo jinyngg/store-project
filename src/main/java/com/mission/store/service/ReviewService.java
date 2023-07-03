@@ -2,10 +2,11 @@ package com.mission.store.service;
 
 import com.mission.store.domain.Reservation;
 import com.mission.store.domain.Review;
+import com.mission.store.domain.Store;
 import com.mission.store.dto.ReviewRegistration;
-import com.mission.store.repository.MemberRepository;
 import com.mission.store.repository.ReservationRepository;
 import com.mission.store.repository.ReviewRepository;
+import com.mission.store.repository.StoreRepository;
 import com.mission.store.type.ReviewStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -20,7 +21,7 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final ReservationRepository reservationRepository;
-    private final MemberRepository memberRepository;
+    private final StoreRepository storeRepository;
 
     /** 리뷰 작성 */
     public void review(ReviewRegistration request) {
@@ -48,6 +49,7 @@ public class ReviewService {
             throw new RuntimeException("공개 또는 점주 공개만 가능합니다.");
         }
 
+        // 5. 리뷰 작성
         reviewRepository.save(Review.builder()
                 .store(reservation.getStore())
                 .reviewer(reservation.getCustomer())
@@ -58,6 +60,22 @@ public class ReviewService {
                 .visitedDate(reservation.getReservationDate())
                 .build());
         
-        // 상점의 리뷰 개수와 리뷰 평점 업로드 로직 추가 작성 필요
+        // 상점 리뷰 개수, 상점 리뷰 평점 업데이트
+        Store store = reservation.getStore();
+        int reviewCount = store.getReviewCount();
+        double averageRating =  store.getAverageRating();
+
+        // 1. 리뷰 개수 증가
+        reviewCount++;
+        store.updateReviewCount(reviewCount);
+
+        // 2. 리뷰 평점 업데이트
+        double totalRating = averageRating * (reviewCount - 1);
+        double newRating = request.getRating();
+        averageRating = (totalRating + newRating) / reviewCount;
+        store.updateAverageRating(averageRating);
+
+        // 3. 리뷰 적용 후 변경
+        storeRepository.save(store);
     }
 }

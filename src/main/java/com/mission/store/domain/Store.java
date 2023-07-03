@@ -43,4 +43,12 @@ public class Store extends BaseEntity {
     private String breakTime; // 휴무 시간(15:00 - 16:00)
 
     private LocalDateTime outOfBusinessAt; // 폐업 일자
+
+    public void updateReviewCount(Integer reviewCount) {
+        this.reviewCount = reviewCount;
+    }
+
+    public void updateAverageRating(double averageRating) {
+        this.averageRating = averageRating;
+    }
 }
